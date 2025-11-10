@@ -1,0 +1,7 @@
+.{
+    .name = .lexer,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.15.2",
+    .paths = .{ "build.zig", "build.zig.zon", "src" },
+    .fingerprint = 0x6a7bdc7a28542434,
+}
