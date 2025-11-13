@@ -52,6 +52,27 @@ const Delimiter = enum {
 };
 
 fn genericTokenize(allocator: std.mem.Allocator, buffer: []const u8, delimiters: []const u8) !TokenIterator {
+    const token_map = try initGenericTokenMap(allocator);
+
+    var delimiter_list = std.ArrayList(u8).empty;
+    try delimiter_list.appendSlice(allocator, delimiters);
+    var it = token_map.iterator();
+    while (it.next()) |entry| {
+        if (entry.value_ptr.* == .delimiter) {
+            try delimiter_list.appendSlice(allocator, entry.key_ptr.*);
+        }
+    }
+
+    return .{
+        .allocator = allocator,
+        .index = 0,
+        .buffer = buffer,
+        .delimiter = delimiter_list,
+        .token_map = token_map,
+    };
+}
+
+fn initGenericTokenMap(allocator: std.mem.Allocator) !std.StringHashMap(TokenType) {
     var token_map = std.StringHashMap(TokenType).init(allocator);
     try token_map.put("if", TokenType{ .keyword = Keyword.control_flow });
     try token_map.put("else", TokenType{ .keyword = Keyword.control_flow });
@@ -135,22 +156,7 @@ fn genericTokenize(allocator: std.mem.Allocator, buffer: []const u8, delimiters:
     try token_map.put("\n", TokenType{ .delimiter = Delimiter.newline });
     try token_map.put("\r\n", TokenType{ .delimiter = Delimiter.newline });
 
-    var delimiter_list = std.ArrayList(u8).empty;
-    try delimiter_list.appendSlice(allocator, delimiters);
-    var it = token_map.iterator();
-    while (it.next()) |entry| {
-        if (entry.value_ptr.* == .delimiter) {
-            try delimiter_list.appendSlice(allocator, entry.key_ptr.*);
-        }
-    }
-
-    return .{
-        .allocator = allocator,
-        .index = 0,
-        .buffer = buffer,
-        .delimiter = delimiter_list,
-        .token_map = token_map,
-    };
+    return token_map;
 }
 
 const TokenIterator = struct {
