@@ -179,36 +179,24 @@ const TokenIterator = struct {
         }
 
         const start = self.index;
+        var end = start;
 
+        var is_delimiter = false;
         if (self.isDelimiter(start)) {
-            const opt_del_token_type = self.token_map.get(self.buffer[start..(start + 1)]);
-            if (opt_del_token_type) |del_token_type| {
-                return .{
-                    .token_type = del_token_type,
-                    .token_str = self.buffer[start..(start + 1)],
-                };
-            }
-            return .{
-                .token_type = TokenType.unknown,
-                .token_str = self.buffer[start..(start + 1)],
-            };
+            end += 1;
+            is_delimiter = true;
         } else {
-            var end = start;
             while (end < self.buffer.len and !self.isDelimiter(end)) : (end += 1) {}
-
-            const opt_token_type = self.token_map.get(self.buffer[start..end]);
-            if (opt_token_type) |token_type| {
-                return .{
-                    .token_type = token_type,
-                    .token_str = self.buffer[start..end],
-                };
-            }
-
-            return .{
-                .token_type = TokenType.identifier,
-                .token_str = self.buffer[start..end],
-            };
         }
+
+        const slice = self.buffer[start..end];
+        const opt_token_type = self.token_map.get(slice);
+        const token_type: TokenType = opt_token_type orelse
+            (if (is_delimiter) .unknown else .identifier);
+        return .{
+            .token_type = token_type,
+            .token_str = slice,
+        };
     }
 
     pub fn rest(self: Self) []const u8 {
